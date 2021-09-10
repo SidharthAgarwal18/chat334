@@ -45,7 +45,7 @@ class Client:
 
         self.username = username
         self.register(username,"TOSEND ")
-        self.register(username,"TORECV ")
+        #self.register(username,"TORECV ")
 
         message_handler = threading.Thread(target=self.handle_messages,args=())
         message_handler.start()
@@ -59,7 +59,20 @@ class Client:
 
             if rec_message=="":
                 continue
-                
+            
+            if "ERROR 102" in rec_message:
+                print("ERROR 102 Unable to send\n\n")
+                continue
+
+            if "ERROR 103" in rec_message:
+                print("ERROR 103 Header Incomplete\n\n")
+                self.sok.close()
+                continue
+
+            if "SEND" in rec_message:
+                print("Message to "+ rec_message[5:(len(rec_message)-2)]+" successfully delivered")  
+                continue    
+
             rec_message = rec_message[8:]
             sender = ""
 
@@ -101,32 +114,13 @@ class Client:
             if(message[0]!="@" or text==""):
                 print('<Kindly please enter the message in the format @reciptent text, where text is non empty>\n')
                 continue
-            if(reciptent==self.username):
-                print('You cannot send a message to yourself')
-                continue
+            
+            #if(reciptent==self.username):
+            #    print('You cannot send a message to yourself')
+            #    continue
 
             encoded_message = "SEND "+reciptent+"\nContent-length:"+str(len(text))+"\n\n"+text
             self.sok.send(encoded_message.encode())
-
-            message_succ_delivered = False
-            while not message_succ_delivered:
-                ack = self.sok.recv(1204).decode()
-                print(ack)
-
-                if "ERROR 102" in ack:
-                    print("ERROR 102 Unable to send\n\n")
-                    break
-
-                if "ERROR 103" in ack:
-                    print("ERROR 103 Header Incomplete\n\n")
-                    break
-
-                if ack == "SEND "+reciptent+"\n\n":
-                    message_succ_delivered = True
-            
-            if(message_succ_delivered):
-                print("Message <"+text+"> to "+ reciptent+" successfully delivered")
-
 
 
 if(len(sys.argv)!=4):
