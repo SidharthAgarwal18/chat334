@@ -82,7 +82,9 @@ class Server:
                 c.send((error_message).encode())
 
     def handle_client(self,c,addr):
-        while True:
+        thread_inprogress = True
+
+        while thread_inprogress:
             try:
                 msg = c.recv(1024)
             except:
@@ -95,6 +97,16 @@ class Server:
 
                 if message[0:5] != "SEND ":
                     c.send(("ERROR 103 Header Incomplete\n\n").encode())
+
+                    thread_inprogress = False
+                    illegal_username = self.username_lookupS[c]
+                    print('Deleting username : '+illegal_username+ ' from the chatroom')
+                    self.username_lookupS.pop(c)
+                    self.socket_lookupS.pop(illegal_username)
+                    self.username_lookupR.pop(self.socket_lookupR[illegal_username])
+                    c.close()
+                    self.socket_lookupR[illegal_username].close()
+                    self.socket_lookupR.pop(illegal_username)
                     continue
 
                 message = message[5:]
@@ -121,6 +133,17 @@ class Server:
 
                             if "ERROR " in ack_message:
                                 c.send(ack_message.encode())
+
+                                thread_inprogress = False
+                                illegal_username = self.username_lookupS[c]
+                                print('Deleting username : '+illegal_username+ ' from the chatroom')
+                                self.username_lookupS.pop(c)
+                                self.socket_lookupS.pop(illegal_username)
+                                self.username_lookupR.pop(self.socket_lookupR[illegal_username])
+                                c.close()
+                                self.socket_lookupR[illegal_username].close()
+                                self.socket_lookupR.pop(illegal_username)
+
                                 break
                             else:
                                 ack_message = "SEND "+ rec_username+"\n\n"
@@ -146,9 +169,20 @@ class Server:
                     
                     if broadcast_failed:
                         ack_message = "ERROR 103 Header Incomplete\n\n"
+                        c.send(ack_message.encode())
+
+                        thread_inprogress = False
+                        illegal_username = self.username_lookupS[c]
+                        print('Deleting username : '+illegal_username+ ' from the chatroom')
+                        self.username_lookupS.pop(c)
+                        self.socket_lookupS.pop(illegal_username)
+                        self.username_lookupR.pop(self.socket_lookupR[illegal_username])
+                        c.close()
+                        self.socket_lookupR[illegal_username].close()
+                        self.socket_lookupR.pop(illegal_username)
                     else:
                         ack_message = "SEND all\n\n"
-                    c.send(ack_message.encode())
+                        c.send(ack_message.encode())
 
 if (len(sys.argv)!=2):
     print('Kindly please correctly enter the port number')

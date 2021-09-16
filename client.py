@@ -152,8 +152,7 @@ class Client:
                 if "ERROR 103 " in rec_message:
                     print("ERROR 103 Header Incomplete\n\n")
                     print('Closing sockets..')
-                    self.sokR.close()
-                    self.sokS.close()
+                    sys.exit()
                     break
 
                 if "SEND " in rec_message:
